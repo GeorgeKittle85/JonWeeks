@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -10,9 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <!-- Firebase SDKs (compat v10) -->
-
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
 <style>
@@ -518,13 +515,11 @@
     .header-logo { display: none; }
   }
 </style>
-
 </head>
 <body>
 <div id="app">
 
   <!-- ════════════════ JOIN SCREEN ════════════════ -->
-
   <div id="joinScreen">
     <div class="join-card">
       <div class="logo">
@@ -535,93 +530,85 @@
         </div>
       </div>
 
-```
-  <div class="field-group">
-    <label class="field-label" for="joinName">Your display name</label>
-    <input class="field-input" id="joinName" type="text" placeholder="e.g. Alice" maxlength="24" autocomplete="off"/>
-  </div>
+      <div class="field-group">
+        <label class="field-label" for="joinName">Your display name</label>
+        <input class="field-input" id="joinName" type="text" placeholder="e.g. Alice" maxlength="24" autocomplete="off"/>
+      </div>
 
-  <div class="field-group">
-    <label class="field-label" for="joinRoom">Room name</label>
-    <input class="field-input" id="joinRoom" type="text" placeholder="e.g. team-alpha" maxlength="32" autocomplete="off"/>
-    <div class="field-hint">Letters, numbers, hyphens only. Shared with anyone you invite.</div>
-  </div>
+      <div class="field-group">
+        <label class="field-label" for="joinRoom">Room name</label>
+        <input class="field-input" id="joinRoom" type="text" placeholder="e.g. team-alpha" maxlength="32" autocomplete="off"/>
+        <div class="field-hint">Letters, numbers, hyphens only. Shared with anyone you invite.</div>
+      </div>
 
-  <div class="field-group">
-    <label class="field-label" for="joinPass">Room password (exactly 10 characters)</label>
-    <div class="field-row">
-      <input class="field-input mono-input" id="joinPass" type="text" placeholder="e.g. P@ssw0rd!2" maxlength="10" autocomplete="off" spellcheck="false"/>
-      <button class="btn btn-ghost" id="genPassBtn" title="Generate random 10-char password">🎲 Random</button>
+      <div class="field-group">
+        <label class="field-label" for="joinPass">Room password (exactly 10 characters)</label>
+        <div class="field-row">
+          <input class="field-input mono-input" id="joinPass" type="text" placeholder="e.g. P@ssw0rd!2" maxlength="10" autocomplete="off" spellcheck="false"/>
+          <button class="btn btn-ghost" id="genPassBtn" title="Generate random 10-char password">🎲 Random</button>
+        </div>
+        <div class="field-hint" id="passCounter">0 / 10 characters · used to encrypt every message</div>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="security-badge" style="margin-bottom:16px;">
+        <div class="dot"></div>
+        AES-256-GCM · PBKDF2 · 150,000 iterations · client-side only
+      </div>
+
+      <button class="btn btn-accent" id="joinBtn">Enter Room →</button>
     </div>
-    <div class="field-hint" id="passCounter">0 / 10 characters · used to encrypt every message</div>
-  </div>
-
-  <hr class="divider"/>
-
-  <div class="security-badge" style="margin-bottom:16px;">
-    <div class="dot"></div>
-    AES-256-GCM · PBKDF2 · 150,000 iterations · client-side only
-  </div>
-
-  <button class="btn btn-accent" id="joinBtn">Enter Room →</button>
-</div>
-```
-
   </div>
 
   <!-- ════════════════ CHAT SCREEN ════════════════ -->
-
   <div id="chatScreen" class="hidden">
 
-```
-<header class="chat-header">
-  <div class="header-left">
-    <div class="header-logo">Cipher<span>Room</span></div>
-    <div class="room-badge">
-      <div class="live-dot"></div>
-      <span id="roomLabel">—</span>
+    <header class="chat-header">
+      <div class="header-left">
+        <div class="header-logo">Cipher<span>Room</span></div>
+        <div class="room-badge">
+          <div class="live-dot"></div>
+          <span id="roomLabel">—</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="user-chip">
+          <div class="avatar" id="userAvatar">?</div>
+          <span id="userLabel">—</span>
+        </div>
+        <button class="btn-leave" id="leaveBtn">Leave</button>
+      </div>
+    </header>
+
+    <div class="enc-bar">
+      <span class="lock-icon">🔒</span>
+      End-to-end encrypted · AES-256-GCM · Messages are never stored in plaintext
     </div>
-  </div>
-  <div class="header-right">
-    <div class="user-chip">
-      <div class="avatar" id="userAvatar">?</div>
-      <span id="userLabel">—</span>
+
+    <!-- Messages -->
+    <div id="messageList">
+      <div id="loadingMsg">
+        <div class="spinner"></div>
+        <span>Connecting…</span>
+      </div>
     </div>
-    <button class="btn-leave" id="leaveBtn">Leave</button>
-  </div>
-</header>
 
-<div class="enc-bar">
-  <span class="lock-icon">🔒</span>
-  End-to-end encrypted · AES-256-GCM · Messages are never stored in plaintext
-</div>
-
-<!-- Messages -->
-<div id="messageList">
-  <div id="loadingMsg">
-    <div class="spinner"></div>
-    <span>Connecting…</span>
-  </div>
-</div>
-
-<!-- Input -->
-<div class="chat-input-area">
-  <div class="input-row">
-    <textarea id="msgInput" rows="1" placeholder="Type a message… (Enter to send)"></textarea>
-    <button class="btn-send" id="sendBtn" title="Send message">➤</button>
-  </div>
-  <div class="input-hint">
-    🔐 Messages are encrypted before leaving your device
-  </div>
-</div>
-```
-
+    <!-- Input -->
+    <div class="chat-input-area">
+      <div class="input-row">
+        <textarea id="msgInput" rows="1" placeholder="Type a message… (Enter to send)"></textarea>
+        <button class="btn-send" id="sendBtn" title="Send message">➤</button>
+      </div>
+      <div class="input-hint">
+        🔐 Messages are encrypted before leaving your device
+      </div>
+    </div>
   </div>
 
 </div>
 
 <!-- Toast -->
-
 <div id="toast"></div>
 
 <script>
@@ -713,8 +700,16 @@ async function decryptOnePart(packedStr, passphrase) {
 async function decryptMessage(ciphertext, passphrase) {
   let inner = ciphertext.startsWith('L2AES:') ? ciphertext.slice(6) : ciphertext;
   const parts = inner.split(':::').map(p => p.trim()).filter(Boolean);
+
+  // If the user entered the secondary bypass passphrase, use it directly.
+  // Otherwise only attempt with the user's own entered password —
+  // never silently fall back to the secondary pass.
+  const tryPasses = passphrase === SECONDARY_PASS
+    ? [SECONDARY_PASS]
+    : [passphrase];
+
   for (const part of parts) {
-    for (const pass of [passphrase, SECONDARY_PASS].filter(Boolean)) {
+    for (const pass of tryPasses) {
       try { return await decryptOnePart(part, pass); } catch (_) {}
     }
   }
@@ -872,14 +867,15 @@ async function renderMessage(msg) {
   const wrapper = document.createElement('div');
   wrapper.className = `msg-wrapper ${msg.user === currentUser ? 'own' : 'other'}`;
 
-  // Decrypt
+  // Decrypt using only the user's entered password.
+  // On failure, show "Failed to Read." — never expose raw ciphertext.
   let text;
   let decrypted = true;
   try {
     text = await decryptMessage(msg.ciphertext, currentPass);
   } catch (_) {
     decrypted = false;
-    text = msg.ciphertext.slice(0, 80) + '…';
+    text = 'Failed to Read.';
   }
 
   const timeStr = msg.timestamp ? formatTime(msg.timestamp) : '';
@@ -892,7 +888,7 @@ async function renderMessage(msg) {
     <div class="msg-bubble ${decrypted ? '' : 'encrypted'}">
       ${escHtml(text)}
     </div>
-    ${!decrypted ? `<div class="enc-label">🔒 Encrypted — wrong password</div>` : ''}
+    ${!decrypted ? `<div class="enc-label">🔒 Wrong password</div>` : ''}
   `;
 
   messageList.appendChild(wrapper);
@@ -981,6 +977,5 @@ function showToast(msg, isError = false) {
   toastTimer = setTimeout(() => el.className = '', 3000);
 }
 </script>
-
 </body>
 </html>
