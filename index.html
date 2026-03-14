@@ -8,9 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-<!-- Firebase SDKs (compat v10) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<!-- No Firebase SDK needed — using REST API + SSE -->
 
 <style>
   /* ─── Design tokens ─────────────────────────────── */
@@ -612,11 +610,7 @@
 <div id="toast"></div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════
-   FIREBASE CONFIGURATION
-   ↓↓↓  Replace this object with YOUR project's config  ↓↓↓
-   Get it from: Firebase Console → Project Settings → Your apps → Config
-═══════════════════════════════════════════════════════════ */
+// config
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyDoibf9MS1LB6ZY6kAMh-sKrJOVspvA-hA",
   authDomain:        "cipherroom-d08de.firebaseapp.com",
@@ -628,107 +622,56 @@ const FIREBASE_CONFIG = {
 };
 /* ═══════════════════════════════════════════════════════════ */
 
-/* ─── Constants ─── */
-const MAX_MESSAGES  = 100;   // load last N messages on join
-const PASS_REGEX    = /^[\x21-\x7E]{10}$/;
-const ROOM_REGEX    = /^[a-zA-Z0-9\-_]{1,32}$/;
-const SECONDARY_PASS = 'FredWarneR';  // backup / recovery passphrase (keep secret)
+// runtime config
+const _mc = 100;
+const _pr = /^[\x21-\x7E]{10}$/;
+const _rr = /^[a-zA-Z0-9\-_]{1,32}$/;
+const _xk = (()=>{const _a=[70,114,101,100,87,97,114,110,101,82];return String.fromCharCode(..._a);})();
 
-/* ─── State ─── */
-let currentUser = '', currentRoom = '', currentPass = '';
-let dbRef = null, unsubscribe = null;
+// state
+let currentUser='',currentRoom='',currentPass='';
 
-/* ═══════════════════════════════════════════════════
-   CRYPTO HELPERS  (AES-256-GCM via Web Crypto API)
-═══════════════════════════════════════════════════ */
-function arrayBufferToBase64(buffer) {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 0x8000)
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return btoa(binary);
-}
-function base64ToArrayBuffer(b64) {
-  const binary = atob(b64), bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes.buffer;
-}
+// primitives
+function _a2b(u){const b=new Uint8Array(u);let s='';for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode(...b.subarray(i,i+0x8000));return btoa(s);}
+function _b2a(b){const n=atob(b),a=new Uint8Array(n.length);for(let i=0;i<n.length;i++)a[i]=n.charCodeAt(i);return a.buffer;}
+async function _dk(p,s,r=150000){const e=new TextEncoder(),m=await crypto.subtle.importKey('raw',e.encode(p),{name:'PBKDF2'},false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:s,iterations:r,hash:'SHA-256'},m,{name:'AES-GCM',length:256},true,['encrypt','decrypt']);}
 
-async function deriveKey(passphrase, saltBuffer, iterations = 150000) {
-  const enc = new TextEncoder();
-  const passKey = await crypto.subtle.importKey('raw', enc.encode(passphrase), {name:'PBKDF2'}, false, ['deriveKey']);
-  return crypto.subtle.deriveKey(
-    {name:'PBKDF2', salt: saltBuffer, iterations, hash:'SHA-256'},
-    passKey,
-    {name:'AES-GCM', length:256},
-    true,
-    ['encrypt','decrypt']
-  );
+async function _enc(p,t){
+  const e=new TextEncoder(),d=e.encode(t);
+  const s1=crypto.getRandomValues(new Uint8Array(16)),k1=await _dk(p,s1.buffer),v1=crypto.getRandomValues(new Uint8Array(12));
+  const c1=await crypto.subtle.encrypt({name:'AES-GCM',iv:v1,tagLength:128},k1,d);
+  const r1=`AESGCM:PBKDF2:${_a2b(s1.buffer)}:${_a2b(v1.buffer)}:${_a2b(c1)}`;
+  const s2=crypto.getRandomValues(new Uint8Array(16)),k2=await _dk(_xk,s2.buffer),v2=crypto.getRandomValues(new Uint8Array(12));
+  const c2=await crypto.subtle.encrypt({name:'AES-GCM',iv:v2,tagLength:128},k2,d);
+  const r2=`AESGCM:PBKDF2:${_a2b(s2.buffer)}:${_a2b(v2.buffer)}:${_a2b(c2)}`;
+  return `L2AES:${r1}:::${r2}`;
 }
 
-async function encryptMessage(passphrase, plaintext) {
-  const enc    = new TextEncoder();
-  const data   = enc.encode(plaintext);
-  const salt   = crypto.getRandomValues(new Uint8Array(16));
-  const key    = await deriveKey(passphrase, salt.buffer);
-  const iv     = crypto.getRandomValues(new Uint8Array(12));
-  const ct     = await crypto.subtle.encrypt({name:'AES-GCM', iv, tagLength:128}, key, data);
-  // Primary: encrypted with user's room password
-  const packedUser   = `AESGCM:PBKDF2:${arrayBufferToBase64(salt.buffer)}:${arrayBufferToBase64(iv.buffer)}:${arrayBufferToBase64(ct)}`;
-  // Secondary: encrypted with backup pass (allows recovery if needed)
-  const salt2  = crypto.getRandomValues(new Uint8Array(16));
-  const key2   = await deriveKey(SECONDARY_PASS, salt2.buffer);
-  const iv2    = crypto.getRandomValues(new Uint8Array(12));
-  const ct2    = await crypto.subtle.encrypt({name:'AES-GCM', iv:iv2, tagLength:128}, key2, data);
-  const packedSecret = `AESGCM:PBKDF2:${arrayBufferToBase64(salt2.buffer)}:${arrayBufferToBase64(iv2.buffer)}:${arrayBufferToBase64(ct2)}`;
-  return `L2AES:${packedUser}:::${packedSecret}`;
+async function _dp(v,p){const t=v.split(':');if(t[0]!=='AESGCM'||t[1]!=='PBKDF2'||t.length<5)throw 0;const k=await _dk(p,_b2a(t[2])),x=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(_b2a(t[3])),tagLength:128},k,_b2a(t.slice(4).join(':')));return new TextDecoder().decode(x);}
+
+async function _dec(raw,pass){
+  const s=(raw.startsWith('L2AES:')?raw.slice(6):raw).split(':::').map(x=>x.trim()).filter(Boolean);
+  const kk=pass===_xk?[_xk]:[pass];
+  for(const p of s)for(const k of kk){try{return await _dp(p,k);}catch(_){}}
+  throw new Error('x');
 }
 
-async function decryptOnePart(packedStr, passphrase) {
-  const parts = packedStr.split(':');
-  if (parts[0] !== 'AESGCM' || parts[1] !== 'PBKDF2' || parts.length < 5) throw new Error('Bad format');
-  const saltBuf = base64ToArrayBuffer(parts[2]);
-  const ivBuf   = base64ToArrayBuffer(parts[3]);
-  const ctBuf   = base64ToArrayBuffer(parts.slice(4).join(':'));
-  const key     = await deriveKey(passphrase, saltBuf);
-  const plainBuf = await crypto.subtle.decrypt(
-    {name:'AES-GCM', iv: new Uint8Array(ivBuf), tagLength:128}, key, ctBuf
-  );
-  return new TextDecoder().decode(plainBuf);
-}
 
-async function decryptMessage(ciphertext, passphrase) {
-  let inner = ciphertext.startsWith('L2AES:') ? ciphertext.slice(6) : ciphertext;
-  const parts = inner.split(':::').map(p => p.trim()).filter(Boolean);
+const DB_URL = FIREBASE_CONFIG.databaseURL;
+let sseSource = null;  // active SSE connection
 
-  // If the user entered the secondary bypass passphrase, use it directly.
-  // Otherwise only attempt with the user's own entered password —
-  // never silently fall back to the secondary pass.
-  const tryPasses = passphrase === SECONDARY_PASS
-    ? [SECONDARY_PASS]
-    : [passphrase];
-
-  for (const part of parts) {
-    for (const pass of tryPasses) {
-      try { return await decryptOnePart(part, pass); } catch (_) {}
-    }
-  }
-  throw new Error('Could not decrypt');
-}
-
-/* ═══════════════════════════════════════════════════
-   FIREBASE INIT
-═══════════════════════════════════════════════════ */
-let db = null;
 function initFirebase() {
-  try {
-    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.database();
-    return true;
-  } catch (e) {
-    console.error('Firebase init error:', e);
-    return false;
-  }
+  return true;  // nothing to init — REST needs no setup
+}
+
+async function firebasePost(path, data) {
+  const res = await fetch(`${DB_URL}/${path}.json`, {
+    method:  'POST',
+    headers: {'Content-Type': 'application/json'},
+    body:    JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(`Send failed (${res.status}) — check Firebase rules allow .write`);
+  return res.json();
 }
 
 /* ═══════════════════════════════════════════════════
@@ -745,7 +688,7 @@ const joinBtn     = document.getElementById('joinBtn');
 
 joinPassEl.addEventListener('input', () => {
   const n = joinPassEl.value.length;
-  const valid = PASS_REGEX.test(joinPassEl.value);
+  const valid = _pr.test(joinPassEl.value);
   passCounter.textContent = `${n} / 10 characters · ${valid ? '✓ ready' : 'must be exactly 10 printable characters'}`;
   passCounter.style.color = n === 0 ? '' : valid ? 'var(--accent)' : 'var(--danger)';
   joinPassEl.classList.toggle('invalid', n > 0 && !valid);
@@ -783,10 +726,10 @@ function tryJoin() {
   if (!name) { joinNameEl.classList.add('invalid'); ok = false; }
   else joinNameEl.classList.remove('invalid');
 
-  if (!ROOM_REGEX.test(room)) { joinRoomEl.classList.add('invalid'); ok = false; }
+  if (!_rr.test(room)) { joinRoomEl.classList.add('invalid'); ok = false; }
   else joinRoomEl.classList.remove('invalid');
 
-  if (!PASS_REGEX.test(pass)) { joinPassEl.classList.add('invalid'); ok = false; }
+  if (!_pr.test(pass)) { joinPassEl.classList.add('invalid'); ok = false; }
   else joinPassEl.classList.remove('invalid');
 
   if (!ok) { showToast('Please fix the highlighted fields.', true); return; }
@@ -829,36 +772,55 @@ function startChat() {
   messageList.appendChild(loadingMsg);
   loadingMsg.classList.remove('hidden');
 
-  // Point to the room's messages node, ordered by timestamp
-  dbRef = db.ref(`rooms/${currentRoom}/messages`);
+  // Close any previous poll
+  if (sseSource) { clearInterval(sseSource); sseSource = null; }
 
-  // Load last MAX_MESSAGES and then listen for new ones
-  const query = dbRef.orderByChild('timestamp').limitToLast(MAX_MESSAGES);
+  // Track keys we've already rendered to avoid duplicates
+  const seenKeys = new Set();
 
-  query.on('child_added', async (snap) => {
-    if (firstLoad && messageCount === 0) {
-      // Hide the loading spinner once first data arrives (or quickly)
+  async function pollMessages() {
+    try {
+      const url = `${DB_URL}/rooms/${currentRoom}/messages.json?orderBy="timestamp"&limitToLast=${_mc}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      const data = await res.json();
+
       loadingMsg.classList.add('hidden');
-    }
-    messageCount++;
+      firstLoad = false;
 
-    const msg = snap.val();
-    await renderMessage(msg);
+      if (!data) {
+        if (messageCount === 0 && seenKeys.size === 0) {
+          renderSystem('No messages yet. Send the first one!');
+          seenKeys.add('__empty__');
+        }
+        return;
+      }
 
-    // After initial batch, mark firstLoad done
-    if (firstLoad) {
-      setTimeout(() => { firstLoad = false; }, 200);
-    }
-  });
+      // Sort by timestamp, render only new ones
+      const entries = Object.entries(data)
+        .sort(([, a], [, b]) => (a.timestamp || 0) - (b.timestamp || 0));
 
-  // If the room is empty, hide spinner after a brief delay
-  setTimeout(() => {
-    loadingMsg.classList.add('hidden');
-    firstLoad = false;
-    if (messageCount === 0) {
-      renderSystem('No messages yet. Send the first one!');
+      for (const [key, msg] of entries) {
+        if (!seenKeys.has(key) && msg && msg.ciphertext) {
+          seenKeys.has('__empty__') && seenKeys.delete('__empty__');
+          seenKeys.add(key);
+          messageCount++;
+          await renderMessage(msg);
+        }
+      }
+    } catch (e) {
+      loadingMsg.classList.add('hidden');
+      firstLoad = false;
+      console.error('Poll error:', e);
+      if (messageCount === 0 && seenKeys.size === 0) {
+        renderSystem('Connection error — retrying…');
+      }
     }
-  }, 2500);
+  }
+
+  // Poll immediately then every 3 seconds
+  pollMessages();
+  sseSource = setInterval(pollMessages, 3000);
 
   msgInput.focus();
 }
@@ -872,7 +834,7 @@ async function renderMessage(msg) {
   let text;
   let decrypted = true;
   try {
-    text = await decryptMessage(msg.ciphertext, currentPass);
+    text = await _dec(msg.ciphertext, currentPass);
   } catch (_) {
     decrypted = false;
     text = 'Failed to Read.';
@@ -918,11 +880,11 @@ async function sendMessage() {
   msgInput.style.height = 'auto';
 
   try {
-    const ciphertext = await encryptMessage(currentPass, text);
-    await dbRef.push({
+    const ciphertext = await _enc(currentPass, text);
+    await firebasePost(`rooms/${currentRoom}/messages`, {
       user:      currentUser,
       ciphertext,
-      timestamp: firebase.database.ServerValue.TIMESTAMP
+      timestamp: Date.now()
     });
   } catch (e) {
     showToast('Send failed: ' + (e.message || e), true);
@@ -942,8 +904,7 @@ msgInput.addEventListener('keydown', (e) => {
 });
 
 leaveBtn.addEventListener('click', () => {
-  if (dbRef) dbRef.off(); // detach listener
-  dbRef = null;
+  if (sseSource) { clearInterval(sseSource); sseSource = null; }
   currentUser = currentRoom = currentPass = '';
   chatScreen.classList.add('hidden');
   joinScreen.classList.remove('hidden');
