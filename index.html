@@ -664,10 +664,8 @@ function initFirebase() {
   return true;  // nothing to init — REST needs no setup
 }
 
-// Writes are routed through the Cloudflare Worker relay so they
-// originate from Cloudflare IPs rather than the client's proxy IP.
-// Reads remain direct — Firebase never blocks GETs from data center IPs.
-const _wr = '/relay';   // worker route prefix — proxied via goingcougars.org worker
+// Writes routed via Cloudflare Worker relay.
+const _wr = 'https://goingcougars.org/relay';
 
 async function firebasePost(path, data) {
   // Try relay first, fall back to direct if relay fails (e.g. local dev)
