@@ -751,9 +751,16 @@ function tryJoin() {
     return;
   }
 
+  // Assign to window first — must be set before startChat polls
   window._cu = name;
   window._cr = room;
   window._cp = pass;
+
+  // Verify assignment succeeded before proceeding (Rammerhead safety check)
+  if (!window._cr) {
+    showToast('Session error — please try again.', true);
+    return;
+  }
 
   // Update header UI
   document.getElementById('roomLabel').textContent  = '#' + room;
@@ -776,6 +783,7 @@ const leaveBtn    = document.getElementById('leaveBtn');
 
 let firstLoad = true;
 let messageCount = 0;
+let _pollFails = 0; // consecutive poll failures
 
 function startChat() {
   firstLoad = true;
@@ -791,6 +799,11 @@ function startChat() {
   const seenKeys = new Set();
 
   async function pollMessages() {
+    // Safety guard — never poll if room name isn't set yet
+    if (!window._cr || window._cr.trim() === '') {
+      console.warn('Poll skipped — room not set yet');
+      return;
+    }
     try {
       // Fetch without query params so proxies can't mangle them — sort client-side
       const url = `${DB_URL}/rooms/${window._cr}/messages.json`;
@@ -817,6 +830,7 @@ function startChat() {
 
       loadingMsg.classList.add('hidden');
       firstLoad = false;
+      _pollFails = 0; // reset on success
 
       if (!data) {
         if (messageCount === 0 && seenKeys.size === 0) {
@@ -842,17 +856,21 @@ function startChat() {
     } catch (e) {
       loadingMsg.classList.add('hidden');
       firstLoad = false;
+      _pollFails++;
       console.error('Poll error:', e.message || e);
-      // Only show the error UI on first load — don't interrupt an active chat
-      if (messageCount === 0 && seenKeys.size === 0 && !seenKeys.has('__err__')) {
+      // Only show the error UI after 2 consecutive failures to avoid
+      // flashing "Retrying" on a single timing hiccup from the proxy
+      if (messageCount === 0 && seenKeys.size === 0
+          && _pollFails >= 2 && !seenKeys.has('__err__')) {
         seenKeys.add('__err__');
         renderSystem('Retrying connection…');
       }
     }
   }
 
-  // Poll immediately then every 3 seconds
-  pollMessages();
+  // Delay first poll slightly so Rammerhead's rewriter finishes
+  // assigning window._cr before the first fetch fires
+  setTimeout(pollMessages, 250);
   sseSource = setInterval(pollMessages, 3000);
 
   msgInput.focus();
