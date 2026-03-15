@@ -625,13 +625,12 @@
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyDoibf9MS1LB6ZY6kAMh-sKrJOVspvA-hA",
   authDomain:        "cipherroom-d08de.firebaseapp.com",
+  databaseURL:       "https://cipherroom-d08de-default-rtdb.firebaseio.com",
   projectId:         "cipherroom-d08de",
   storageBucket:     "cipherroom-d08de.firebasestorage.app",
   messagingSenderId: "146721483194",
   appId:             "1:146721483194:web:f0a37809a3b557d1501583"
 };
-// DB endpoint stored as base64 — prevents proxy URL rewriters from mangling it
-const _du = atob('aHR0cHM6Ly9jaXBoZXJyb29tLWQwOGRlLWRlZmF1bHQtcnRkYi5maXJlYmFzZWlvLmNvbQ==');
 /* ═══════════════════════════════════════════════════════════ */
 
 // runtime config
@@ -670,7 +669,7 @@ async function _dec(raw,pass){
 }
 
 
-const DB_URL = _du;
+const DB_URL = FIREBASE_CONFIG.databaseURL;
 let sseSource = null;  // active SSE connection
 
 function initFirebase() {
