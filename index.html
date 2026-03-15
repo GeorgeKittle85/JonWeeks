@@ -678,7 +678,6 @@ function initFirebase() {
 async function firebasePost(path, data) {
   const res = await fetch(`${DB_URL}/${path}.json`, {
     method:  'POST',
-    mode:    'cors',
     headers: {'Content-Type': 'application/json'},
     body:    JSON.stringify(data)
   });
@@ -794,9 +793,26 @@ function startChat() {
     try {
       // Fetch without query params so proxies can't mangle them — sort client-side
       const url = `${DB_URL}/rooms/${currentRoom}/messages.json`;
-      const res = await fetch(url, { mode: 'cors', headers: { 'Accept': 'application/json' } });
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      const data = await res.json();
+
+      // Read as text first — Hammerhead-based proxies can corrupt JSON if
+      // parsed directly; this lets us catch and diagnose non-JSON responses.
+      const raw = await res.text();
+      if (!raw || raw.trim() === '') { return; }  // empty = no messages yet, silent skip
+
+      // Detect HTML response — means proxy rewrote the response body
+      if (raw.trim().startsWith('<')) {
+        console.warn('Poll: received HTML instead of JSON — proxy may be rewriting response');
+        return;
+      }
+
+      let data;
+      try { data = JSON.parse(raw); }
+      catch(je) {
+        console.warn('Poll: JSON parse failed —', je.message, '— raw:', raw.slice(0, 120));
+        return;
+      }
 
       loadingMsg.classList.add('hidden');
       firstLoad = false;
@@ -825,9 +841,11 @@ function startChat() {
     } catch (e) {
       loadingMsg.classList.add('hidden');
       firstLoad = false;
-      console.error('Poll error:', e);
-      if (messageCount === 0 && seenKeys.size === 0) {
-        renderSystem('Connection error — retrying…');
+      console.error('Poll error:', e.message || e);
+      // Only show the error UI on first load — don't interrupt an active chat
+      if (messageCount === 0 && seenKeys.size === 0 && !seenKeys.has('__err__')) {
+        seenKeys.add('__err__');
+        renderSystem('Retrying connection…');
       }
     }
   }
