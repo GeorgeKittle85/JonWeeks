@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -514,13 +513,11 @@
     .header-logo { display: none; }
   }
 </style>
-
 </head>
 <body>
 <div id="app">
 
   <!-- ════════════════ JOIN SCREEN ════════════════ -->
-
   <div id="joinScreen">
     <div class="join-card">
       <div class="logo">
@@ -531,93 +528,85 @@
         </div>
       </div>
 
-```
-  <div class="field-group">
-    <label class="field-label" for="joinName">Your display name</label>
-    <input class="field-input" id="joinName" type="text" placeholder="e.g. Alice" maxlength="24" autocomplete="off"/>
-  </div>
+      <div class="field-group">
+        <label class="field-label" for="joinName">Your display name</label>
+        <input class="field-input" id="joinName" type="text" placeholder="e.g. Alice" maxlength="24" autocomplete="off"/>
+      </div>
 
-  <div class="field-group">
-    <label class="field-label" for="joinRoom">Room name</label>
-    <input class="field-input" id="joinRoom" type="text" placeholder="e.g. team-alpha" maxlength="32" autocomplete="off"/>
-    <div class="field-hint">Letters, numbers, hyphens only. Shared with anyone you invite.</div>
-  </div>
+      <div class="field-group">
+        <label class="field-label" for="joinRoom">Room name</label>
+        <input class="field-input" id="joinRoom" type="text" placeholder="e.g. team-alpha" maxlength="32" autocomplete="off"/>
+        <div class="field-hint">Letters, numbers, hyphens only. Shared with anyone you invite.</div>
+      </div>
 
-  <div class="field-group">
-    <label class="field-label" for="joinPass">Room password (exactly 10 characters)</label>
-    <div class="field-row">
-      <input class="field-input mono-input" id="joinPass" type="text" placeholder="e.g. P@ssw0rd!2" maxlength="10" autocomplete="off" spellcheck="false"/>
-      <button class="btn btn-ghost" id="genPassBtn" title="Generate random 10-char password">🎲 Random</button>
+      <div class="field-group">
+        <label class="field-label" for="joinPass">Room password (exactly 10 characters)</label>
+        <div class="field-row">
+          <input class="field-input mono-input" id="joinPass" type="text" placeholder="e.g. P@ssw0rd!2" maxlength="10" autocomplete="off" spellcheck="false"/>
+          <button class="btn btn-ghost" id="genPassBtn" title="Generate random 10-char password">🎲 Random</button>
+        </div>
+        <div class="field-hint" id="passCounter">0 / 10 characters · used to encrypt every message</div>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="security-badge" style="margin-bottom:16px;">
+        <div class="dot"></div>
+        AES-256-GCM · PBKDF2 · 150,000 iterations · client-side only
+      </div>
+
+      <button class="btn btn-accent" id="joinBtn">Enter Room →</button>
     </div>
-    <div class="field-hint" id="passCounter">0 / 10 characters · used to encrypt every message</div>
-  </div>
-
-  <hr class="divider"/>
-
-  <div class="security-badge" style="margin-bottom:16px;">
-    <div class="dot"></div>
-    AES-256-GCM · PBKDF2 · 150,000 iterations · client-side only
-  </div>
-
-  <button class="btn btn-accent" id="joinBtn">Enter Room →</button>
-</div>
-```
-
   </div>
 
   <!-- ════════════════ CHAT SCREEN ════════════════ -->
-
   <div id="chatScreen" class="hidden">
 
-```
-<header class="chat-header">
-  <div class="header-left">
-    <div class="header-logo">Cipher<span>Room</span></div>
-    <div class="room-badge">
-      <div class="live-dot"></div>
-      <span id="roomLabel">—</span>
+    <header class="chat-header">
+      <div class="header-left">
+        <div class="header-logo">Cipher<span>Room</span></div>
+        <div class="room-badge">
+          <div class="live-dot"></div>
+          <span id="roomLabel">—</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="user-chip">
+          <div class="avatar" id="userAvatar">?</div>
+          <span id="userLabel">—</span>
+        </div>
+        <button class="btn-leave" id="leaveBtn">Leave</button>
+      </div>
+    </header>
+
+    <div class="enc-bar">
+      <span class="lock-icon">🔒</span>
+      End-to-end encrypted · AES-256-GCM · Messages are never stored in plaintext
     </div>
-  </div>
-  <div class="header-right">
-    <div class="user-chip">
-      <div class="avatar" id="userAvatar">?</div>
-      <span id="userLabel">—</span>
+
+    <!-- Messages -->
+    <div id="messageList">
+      <div id="loadingMsg">
+        <div class="spinner"></div>
+        <span>Connecting…</span>
+      </div>
     </div>
-    <button class="btn-leave" id="leaveBtn">Leave</button>
-  </div>
-</header>
 
-<div class="enc-bar">
-  <span class="lock-icon">🔒</span>
-  End-to-end encrypted · AES-256-GCM · Messages are never stored in plaintext
-</div>
-
-<!-- Messages -->
-<div id="messageList">
-  <div id="loadingMsg">
-    <div class="spinner"></div>
-    <span>Connecting…</span>
-  </div>
-</div>
-
-<!-- Input -->
-<div class="chat-input-area">
-  <div class="input-row">
-    <textarea id="msgInput" rows="1" placeholder="Type a message… (Enter to send)"></textarea>
-    <button class="btn-send" id="sendBtn" title="Send message">➤</button>
-  </div>
-  <div class="input-hint">
-    🔐 Messages are encrypted before leaving your device
-  </div>
-</div>
-```
-
+    <!-- Input -->
+    <div class="chat-input-area">
+      <div class="input-row">
+        <textarea id="msgInput" rows="1" placeholder="Type a message… (Enter to send)"></textarea>
+        <button class="btn-send" id="sendBtn" title="Send message">➤</button>
+      </div>
+      <div class="input-hint">
+        🔐 Messages are encrypted before leaving your device
+      </div>
+    </div>
   </div>
 
 </div>
 
 <!-- Toast -->
-
 <div id="toast"></div>
 
 <script>
@@ -798,41 +787,32 @@ function startChat() {
   // Track keys we've already rendered to avoid duplicates
   const seenKeys = new Set();
 
+  // Helper: fetch one tiny JSON response and parse it safely
+  async function _fetch(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const raw = await res.text();
+    if (!raw || raw.trim() === '' || raw.trim() === 'null') return null;
+    if (raw.trim().startsWith('<')) throw new Error('proxy_html');
+    return JSON.parse(raw);
+  }
+
   async function pollMessages() {
     // Safety guard — never poll if room name isn't set yet
-    if (!window._cr || window._cr.trim() === '') {
-      console.warn('Poll skipped — room not set yet');
-      return;
-    }
+    if (!window._cr || window._cr.trim() === '') return;
+
     try {
-      // Fetch without query params so proxies can't mangle them — sort client-side
-      const url = `${DB_URL}/rooms/${window._cr}/messages.json`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-
-      // Read as text first — Hammerhead-based proxies can corrupt JSON if
-      // parsed directly; this lets us catch and diagnose non-JSON responses.
-      const raw = await res.text();
-      if (!raw || raw.trim() === '') { return; }  // empty = no messages yet, silent skip
-
-      // Detect HTML response — means proxy rewrote the response body
-      if (raw.trim().startsWith('<')) {
-        console.warn('Poll: received HTML instead of JSON — proxy may be rewriting response');
-        return;
-      }
-
-      let data;
-      try { data = JSON.parse(raw); }
-      catch(je) {
-        console.warn('Poll: JSON parse failed —', je.message, '— raw:', raw.slice(0, 120));
-        return;
-      }
+      // ── Step 1: fetch ONLY the keys using shallow=true ──────────────
+      // Response is tiny: {"key1":true,"key2":true} — a few dozen bytes.
+      // Rammerhead can't drop a response this small.
+      const base = DB_URL + '/rooms/' + window._cr + '/messages.json';
+      const keysData = await _fetch(base + '?shallow=true');
 
       loadingMsg.classList.add('hidden');
       firstLoad = false;
-      _pollFails = 0; // reset on success
+      _pollFails = 0;
 
-      if (!data) {
+      if (!keysData) {
         if (messageCount === 0 && seenKeys.size === 0) {
           renderSystem('No messages yet. Send the first one!');
           seenKeys.add('__empty__');
@@ -840,26 +820,38 @@ function startChat() {
         return;
       }
 
-      // Sort by timestamp client-side, limit to last _mc messages
-      const entries = Object.entries(data)
-        .sort(([, a], [, b]) => (a.timestamp || 0) - (b.timestamp || 0))
-        .slice(-_mc);
+      // ── Step 2: find keys we haven't rendered yet ────────────────────
+      const allKeys = Object.keys(keysData);
+      const newKeys = allKeys.filter(k => !seenKeys.has(k));
+      if (newKeys.length === 0) return; // nothing new
 
-      for (const [key, msg] of entries) {
-        if (!seenKeys.has(key) && msg && msg.ciphertext) {
-          seenKeys.has('__empty__') && seenKeys.delete('__empty__');
-          seenKeys.add(key);
-          messageCount++;
-          await renderMessage(msg);
-        }
+      seenKeys.delete('__empty__');
+
+      // ── Step 3: fetch each new message individually ──────────────────
+      // Each fetch is one tiny message — ~300 bytes max.
+      // Process in timestamp order by fetching all then sorting.
+      const fetched = [];
+      for (const key of newKeys) {
+        try {
+          const msg = await _fetch(DB_URL + '/rooms/' + window._cr + '/messages/' + key + '.json');
+          if (msg && msg.ciphertext) fetched.push({ key, msg });
+        } catch(_) { /* skip failed individual fetches */ }
       }
+
+      // Sort by timestamp before rendering
+      fetched.sort((a, b) => (a.msg.timestamp || 0) - (b.msg.timestamp || 0));
+
+      for (const { key, msg } of fetched) {
+        seenKeys.add(key);
+        messageCount++;
+        await renderMessage(msg);
+      }
+
     } catch (e) {
       loadingMsg.classList.add('hidden');
       firstLoad = false;
       _pollFails++;
-      console.error('Poll error:', e.message || e);
-      // Only show the error UI after 2 consecutive failures to avoid
-      // flashing "Retrying" on a single timing hiccup from the proxy
+      if (e.message !== 'proxy_html') console.error('Poll error:', e.message || e);
       if (messageCount === 0 && seenKeys.size === 0
           && _pollFails >= 2 && !seenKeys.has('__err__')) {
         seenKeys.add('__err__');
@@ -989,6 +981,5 @@ function showToast(msg, isError = false) {
   toastTimer = setTimeout(() => el.className = '', 3000);
 }
 </script>
-
 </body>
 </html>
