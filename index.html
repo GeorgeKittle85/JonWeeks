@@ -625,12 +625,13 @@
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyDoibf9MS1LB6ZY6kAMh-sKrJOVspvA-hA",
   authDomain:        "cipherroom-d08de.firebaseapp.com",
-  databaseURL:       "https://cipherroom-d08de-default-rtdb.firebaseio.com",
   projectId:         "cipherroom-d08de",
   storageBucket:     "cipherroom-d08de.firebasestorage.app",
   messagingSenderId: "146721483194",
   appId:             "1:146721483194:web:f0a37809a3b557d1501583"
 };
+// DB endpoint stored as base64 — prevents proxy URL rewriters from mangling it
+const _du = atob('aHR0cHM6Ly9jaXBoZXJyb29tLWQwOGRlLWRlZmF1bHQtcnRkYi5maXJlYmFzZWlvLmNvbQ==');
 /* ═══════════════════════════════════════════════════════════ */
 
 // runtime config
@@ -640,7 +641,8 @@ const _rr = /^[a-zA-Z0-9\-_]{1,32}$/;
 const _xk = (()=>{const _a=[70,114,101,100,87,97,114,110,101,82];return String.fromCharCode(..._a);})();
 
 // state
-let currentUser='',currentRoom='',currentPass='';
+// Attach state to window so Rammerhead's closure rewriting can't hide them
+window._cu=''; window._cr=''; window._cp='';
 
 // primitives
 function _a2b(u){const b=new Uint8Array(u);let s='';for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode(...b.subarray(i,i+0x8000));return btoa(s);}
@@ -668,7 +670,7 @@ async function _dec(raw,pass){
 }
 
 
-const DB_URL = FIREBASE_CONFIG.databaseURL;
+const DB_URL = _du;
 let sseSource = null;  // active SSE connection
 
 function initFirebase() {
@@ -750,9 +752,9 @@ function tryJoin() {
     return;
   }
 
-  currentUser = name;
-  currentRoom = room;
-  currentPass = pass;
+  window._cu = name;
+  window._cr = room;
+  window._cp = pass;
 
   // Update header UI
   document.getElementById('roomLabel').textContent  = '#' + room;
@@ -792,7 +794,7 @@ function startChat() {
   async function pollMessages() {
     try {
       // Fetch without query params so proxies can't mangle them — sort client-side
-      const url = `${DB_URL}/rooms/${currentRoom}/messages.json`;
+      const url = `${DB_URL}/rooms/${window._cr}/messages.json`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
 
@@ -859,14 +861,14 @@ function startChat() {
 
 async function renderMessage(msg) {
   const wrapper = document.createElement('div');
-  wrapper.className = `msg-wrapper ${msg.user === currentUser ? 'own' : 'other'}`;
+  wrapper.className = `msg-wrapper ${msg.user === window._cu ? 'own' : 'other'}`;
 
   // Decrypt using only the user's entered password.
   // On failure, show "Failed to Read." — never expose raw ciphertext.
   let text;
   let decrypted = true;
   try {
-    text = await _dec(msg.ciphertext, currentPass);
+    text = await _dec(msg.ciphertext, window._cp);
   } catch (_) {
     decrypted = false;
     text = 'Failed to Read.';
@@ -912,9 +914,9 @@ async function sendMessage() {
   msgInput.style.height = 'auto';
 
   try {
-    const ciphertext = await _enc(currentPass, text);
-    await firebasePost(`rooms/${currentRoom}/messages`, {
-      user:      currentUser,
+    const ciphertext = await _enc(window._cp, text);
+    await firebasePost(`rooms/${window._cr}/messages`, {
+      user:      window._cu,
       ciphertext,
       timestamp: Date.now()
     });
@@ -937,7 +939,7 @@ msgInput.addEventListener('keydown', (e) => {
 
 leaveBtn.addEventListener('click', () => {
   if (sseSource) { clearInterval(sseSource); sseSource = null; }
-  currentUser = currentRoom = currentPass = '';
+  window._cu = window._cr = window._cp = '';
   chatScreen.classList.add('hidden');
   joinScreen.classList.remove('hidden');
   messageList.innerHTML = '';
