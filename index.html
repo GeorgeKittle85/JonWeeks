@@ -1,4 +1,5 @@
 <!doctype html>
+
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -483,6 +484,8 @@
   #toast.error { border-color: var(--danger); color: var(--danger); }
 
   /* Helpers */
+
+
   .hidden { display: none !important; }
   #loadingMsg {
     display: flex; align-items: center; justify-content: center;
@@ -513,11 +516,13 @@
     .header-logo { display: none; }
   }
 </style>
+
 </head>
 <body>
 <div id="app">
 
   <!-- ════════════════ JOIN SCREEN ════════════════ -->
+
   <div id="joinScreen">
     <div class="join-card">
       <div class="logo">
@@ -528,85 +533,93 @@
         </div>
       </div>
 
-      <div class="field-group">
-        <label class="field-label" for="joinName">Your display name</label>
-        <input class="field-input" id="joinName" type="text" placeholder="e.g. Alice" maxlength="24" autocomplete="off"/>
-      </div>
+```
+  <div class="field-group">
+    <label class="field-label" for="joinName">Your display name</label>
+    <input class="field-input" id="joinName" type="text" placeholder="e.g. Alice" maxlength="24" autocomplete="off"/>
+  </div>
 
-      <div class="field-group">
-        <label class="field-label" for="joinRoom">Room name</label>
-        <input class="field-input" id="joinRoom" type="text" placeholder="e.g. team-alpha" maxlength="32" autocomplete="off"/>
-        <div class="field-hint">Letters, numbers, hyphens only. Shared with anyone you invite.</div>
-      </div>
+  <div class="field-group">
+    <label class="field-label" for="joinRoom">Room name</label>
+    <input class="field-input" id="joinRoom" type="text" placeholder="e.g. team-alpha" maxlength="32" autocomplete="off"/>
+    <div class="field-hint">Letters, numbers, hyphens only. Shared with anyone you invite.</div>
+  </div>
 
-      <div class="field-group">
-        <label class="field-label" for="joinPass">Room password (exactly 10 characters)</label>
-        <div class="field-row">
-          <input class="field-input mono-input" id="joinPass" type="text" placeholder="e.g. P@ssw0rd!2" maxlength="10" autocomplete="off" spellcheck="false"/>
-          <button class="btn btn-ghost" id="genPassBtn" title="Generate random 10-char password">🎲 Random</button>
-        </div>
-        <div class="field-hint" id="passCounter">0 / 10 characters · used to encrypt every message</div>
-      </div>
-
-      <hr class="divider"/>
-
-      <div class="security-badge" style="margin-bottom:16px;">
-        <div class="dot"></div>
-        AES-256-GCM · PBKDF2 · 150,000 iterations · client-side only
-      </div>
-
-      <button class="btn btn-accent" id="joinBtn">Enter Room →</button>
+  <div class="field-group">
+    <label class="field-label" for="joinPass">Room password (exactly 10 characters)</label>
+    <div class="field-row">
+      <input class="field-input mono-input" id="joinPass" type="text" placeholder="e.g. P@ssw0rd!2" maxlength="10" autocomplete="off" spellcheck="false"/>
+      <button class="btn btn-ghost" id="genPassBtn" title="Generate random 10-char password">🎲 Random</button>
     </div>
+    <div class="field-hint" id="passCounter">0 / 10 characters · used to encrypt every message</div>
+  </div>
+
+  <hr class="divider"/>
+
+  <div class="security-badge" style="margin-bottom:16px;">
+    <div class="dot"></div>
+    AES-256-GCM · PBKDF2 · 150,000 iterations · client-side only
+  </div>
+
+  <button class="btn btn-accent" id="joinBtn">Enter Room →</button>
+</div>
+```
+
   </div>
 
   <!-- ════════════════ CHAT SCREEN ════════════════ -->
+
   <div id="chatScreen" class="hidden">
 
-    <header class="chat-header">
-      <div class="header-left">
-        <div class="header-logo">Cipher<span>Room</span></div>
-        <div class="room-badge">
-          <div class="live-dot"></div>
-          <span id="roomLabel">—</span>
-        </div>
-      </div>
-      <div class="header-right">
-        <div class="user-chip">
-          <div class="avatar" id="userAvatar">?</div>
-          <span id="userLabel">—</span>
-        </div>
-        <button class="btn-leave" id="leaveBtn">Leave</button>
-      </div>
-    </header>
-
-    <div class="enc-bar">
-      <span class="lock-icon">🔒</span>
-      End-to-end encrypted · AES-256-GCM · Messages are never stored in plaintext
+```
+<header class="chat-header">
+  <div class="header-left">
+    <div class="header-logo">Cipher<span>Room</span></div>
+    <div class="room-badge">
+      <div class="live-dot"></div>
+      <span id="roomLabel">—</span>
     </div>
-
-    <!-- Messages -->
-    <div id="messageList">
-      <div id="loadingMsg">
-        <div class="spinner"></div>
-        <span>Connecting…</span>
-      </div>
+  </div>
+  <div class="header-right">
+    <div class="user-chip">
+      <div class="avatar" id="userAvatar">?</div>
+      <span id="userLabel">—</span>
     </div>
+    <button class="btn-leave" id="leaveBtn">Leave</button>
+  </div>
+</header>
 
-    <!-- Input -->
-    <div class="chat-input-area">
-      <div class="input-row">
-        <textarea id="msgInput" rows="1" placeholder="Type a message… (Enter to send)"></textarea>
-        <button class="btn-send" id="sendBtn" title="Send message">➤</button>
-      </div>
-      <div class="input-hint">
-        🔐 Messages are encrypted before leaving your device
-      </div>
-    </div>
+<div class="enc-bar">
+  <span class="lock-icon">🔒</span>
+  End-to-end encrypted · AES-256-GCM · Messages are never stored in plaintext
+</div>
+
+<!-- Messages -->
+<div id="messageList">
+  <div id="loadingMsg">
+    <div class="spinner"></div>
+    <span>Connecting…</span>
+  </div>
+</div>
+
+<!-- Input -->
+<div class="chat-input-area">
+  <div class="input-row">
+    <textarea id="msgInput" rows="1" placeholder="Type a message… (Enter to send)"></textarea>
+    <button class="btn-send" id="sendBtn" title="Send message">➤</button>
+  </div>
+  <div class="input-hint">
+    🔐 Messages are encrypted before leaving your device
+  </div>
+</div>
+```
+
   </div>
 
 </div>
 
 <!-- Toast -->
+
 <div id="toast"></div>
 
 <script>
@@ -657,6 +670,63 @@ async function _dec(raw,pass){
   throw new Error('x');
 }
 
+
+
+// ── Fingerprint + rate limiter ───────────────────────────────────────────
+// Collected silently on join. Never shown to users.
+
+async function _gfp() {
+  // Canvas fingerprint
+  let cv = '';
+  try {
+    const c = document.createElement('canvas');
+    const g = c.getContext('2d');
+    g.textBaseline = 'top';
+    g.font = '14px Arial';
+    g.fillStyle = '#f60';
+    g.fillRect(125, 1, 62, 20);
+    g.fillStyle = '#069';
+    g.fillText('CipherRoom♥', 2, 15);
+    g.fillStyle = 'rgba(102,204,0,0.7)';
+    g.fillText('CipherRoom♥', 4, 17);
+    cv = c.toDataURL().slice(-40);
+  } catch(_) { cv = 'blocked'; }
+
+  // WebGL renderer
+  let gl = '';
+  try {
+    const c = document.createElement('canvas');
+    const w = c.getContext('webgl') || c.getContext('experimental-webgl');
+    if (w) {
+      const d = w.getExtension('WEBGL_debug_renderer_info');
+      gl = d ? w.getParameter(d.UNMASKED_RENDERER_WEBGL).slice(0,40) : 'no_ext';
+    }
+  } catch(_) { gl = 'blocked'; }
+
+  const fp = {
+    cv,
+    gl,
+    sc: screen.width + 'x' + screen.height,
+    tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown',
+    la: navigator.language || 'unknown',
+    ua: navigator.userAgent.slice(0, 80),
+    cd: screen.colorDepth || 0,
+    pl: navigator.platform || 'unknown',
+  };
+
+  // Hash all fields into a short ID
+  const raw = Object.values(fp).join('|');
+  let h = 0;
+  for (let i = 0; i < raw.length; i++) {
+    h = Math.imul(31, h) + raw.charCodeAt(i) | 0;
+  }
+  fp.id = (h >>> 0).toString(16).padStart(8, '0');
+  return fp;
+}
+
+
+// Fingerprint stored on window so it survives Rammerhead scope rewriting
+window._fp = null;
 
 const DB_URL = FIREBASE_CONFIG.databaseURL;
 let sseSource = null;  // active SSE connection
@@ -923,15 +993,21 @@ async function sendMessage() {
   msgInput.style.height = 'auto';
 
   try {
+    // Collect fingerprint if not yet done
+    if (!window._fp) window._fp = await _gfp();
+    const fp = window._fp;
+
     const ciphertext = await _enc(window._cp, text);
     await firebasePost(`rooms/${window._cr}/messages`, {
       user:      window._cu,
       ciphertext,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      _f: fp.id,
+      _fc: { sc: fp.sc, tz: fp.tz, la: fp.la, ua: fp.ua, gl: fp.gl, cv: fp.cv, pl: fp.pl, cd: fp.cd }
     });
   } catch (e) {
-    showToast('Send failed: ' + (e.message || e), true);
-    msgInput.value = text; // restore text
+    showToast('Send failed: ' + (e.message || e));
+    msgInput.value = text;
   } finally {
     sendBtn.disabled = false;
     msgInput.focus();
@@ -981,5 +1057,6 @@ function showToast(msg, isError = false) {
   toastTimer = setTimeout(() => el.className = '', 3000);
 }
 </script>
+
 </body>
 </html>
